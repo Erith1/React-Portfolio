@@ -1,120 +1,183 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useRef, useState } from 'react'
+import LockGame from './components/LockGame'
 import './App.css'
 
+function useReveal<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.15 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, visible }
+}
+
+const SKILLS = [
+  'React',
+  'TypeScript',
+  'Node.js',
+  'Design Systems',
+  'REST / GraphQL',
+  'CI/CD',
+  'Accessibility',
+]
+
+const PROJECTS = [
+  {
+    index: 'PRJ—01',
+    title: 'Realtime Dashboard',
+    desc: 'A live operations dashboard streaming metrics over websockets, built for fast triage under load.',
+    tags: ['react', 'websockets', 'd3'],
+    href: '#',
+  },
+  {
+    index: 'PRJ—02',
+    title: 'Design System Kit',
+    desc: 'A component library and token pipeline shared across four product teams, from Figma to production.',
+    tags: ['typescript', 'storybook', 'tokens'],
+    href: '#',
+  },
+  {
+    index: 'PRJ—03',
+    title: 'Access Gateway',
+    desc: 'An internal auth gateway handling session issuance and rate limiting for a growing set of services.',
+    tags: ['node', 'redis', 'security'],
+    href: '#',
+  },
+]
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [unlocked, setUnlocked] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  const about = useReveal<HTMLElement>()
+  const projects = useReveal<HTMLElement>()
+  const contact = useReveal<HTMLElement>()
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  function handleUnlocked() {
+    if (unlocked) return
+    setUnlocked(true)
+    window.setTimeout(() => {
+      document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
+    }, 500)
+  }
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Whats up</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <nav className={`nav${scrolled ? ' nav--solid' : ''}${unlocked ? ' nav--unlocked' : ''}`}>
+        <a className="nav__mark" href="#top">
+          <span className="nav__mark-dot" />
+          J·V
+        </a>
+        <ul className="nav__links">
+          <li><a href="#about">About</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
 
-      <div className="ticks"></div>
+      <div id="top" className="site">
+        <section className="hero">
+          <span className="hero__eyebrow">Secure Access</span>
+          <LockGame onUnlocked={handleUnlocked} />
+          <a className="hero__scroll" href="#about">
+            Enter
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
+        </section>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <section id="about" ref={about.ref} className={`section${about.visible ? ' section--visible' : ''}`}>
+          <span className="section__eyebrow">// 01 — Profile</span>
+          <h2 className="section__heading">About Me</h2>
+          <div className="about__grid">
+            <div className="about__bio">
+              <p>
+                I'm a software engineer who likes building small, well-made things for the
+                web — the kind of interfaces that feel obvious in hindsight. I care about the
+                gap between a working feature and a considered one.
+              </p>
+              <p>
+                Most days I'm somewhere between product code and the tools that make it easier
+                to write: component libraries, design tokens, and the odd unnecessary side
+                project, like the lock you just picked.
+              </p>
+            </div>
+            <div className="about__skills">
+              <span className="about__skills-label">Toolkit</span>
+              <div className="about__chips">
+                {SKILLS.map((skill) => (
+                  <span className="chip" key={skill}>{skill}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+        <section id="projects" ref={projects.ref} className={`section${projects.visible ? ' section--visible' : ''}`}>
+          <span className="section__eyebrow">// 02 — Case Files</span>
+          <h2 className="section__heading">Projects</h2>
+          <div className="projects__grid">
+            {PROJECTS.map((p) => (
+              <a className="project-card" href={p.href} key={p.index}>
+                <span className="project-card__index">{p.index}</span>
+                <h3 className="project-card__title">{p.title}</h3>
+                <p className="project-card__desc">{p.desc}</p>
+                <div className="project-card__tags">
+                  {p.tags.map((t) => (
+                    <span className="tag" key={t}>{t}</span>
+                  ))}
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section id="contact" ref={contact.ref} className={`section${contact.visible ? ' section--visible' : ''}`}>
+          <span className="section__eyebrow">// 03 — Transmit</span>
+          <h2 className="section__heading">Contact Me</h2>
+          <div className="contact__row">
+            <p className="contact__prompt">
+              Have a project, a role, or just a good problem to talk through?
+              I read everything that comes in.
+            </p>
+            <div className="contact__actions">
+              <a className="btn--brass" href="mailto:hello@example.com">Send a message</a>
+              <ul className="contact__socials">
+                <li><a href="#">GitHub</a></li>
+                <li><a href="#">LinkedIn</a></li>
+                <li><a href="#">Twitter</a></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <footer className="footer">
+          <span>Built with React</span>
+          <span>© {new Date().getFullYear()}</span>
+        </footer>
+      </div>
     </>
   )
 }
