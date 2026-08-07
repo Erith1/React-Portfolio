@@ -127,7 +127,7 @@ function App() {
               </p>
             </div>
             
-          
+            {/* The Framed Image */}
             <div className="about__image-wrapper">
               <img 
                 src="7f629a6b-f279-4140-a007-8742662bbaef.jpg" 
@@ -167,12 +167,7 @@ function App() {
               Want to know me better? Here's how.
             </p>
             <div className="contact__actions">
-              <a className="btn--brass" href="mailto:hello@example.com">Send a message</a>
-              <ul className="contact__socials">
-                <li><a href="#">GitHub</a></li>
-                <li><a href="#">LinkedIn</a></li>
-                <li><a href="#">Twitter</a></li>
-              </ul>
+              <a className="btn--brass" href="mailto:lorenzo_lubrico@dlsl.edu.ph">lorenzo_lubrico@dlsl.edu.ph</a>
             </div>
           </div>
         </section>
