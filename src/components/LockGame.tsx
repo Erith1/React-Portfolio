@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-type Phase = 'idle' | 'playing' | 'flash-hit' | 'flash-miss' | 'complete'
-
+type Phase = 'idle' | 'playing' | 'complete'
+type Flash = 'hit' | 'miss' | null
 type Target = { start: number; width: number }
 
-const ROUNDS: { width: number; duration: number }[] = [
-  { width: 46, duration: 3400 },
-  { width: 34, duration: 2600 },
-  { width: 24, duration: 2000 },
-]
+const GAME_DURATION = 30000 // ms
+const WIDTH_START = 42 // deg, easier at the beginning
+const WIDTH_END = 20 // deg, tighter near the end
+const REV_START = 2600 // ms per revolution, slower at the beginning
+const REV_END = 1500 // ms per revolution, faster near the end
 
 const CX = 160
 const CY = 160
@@ -17,6 +17,11 @@ const TICK_OUT = 130
 const TICK_IN_MINOR = 120
 const TICK_IN_MAJOR = 114
 const NEEDLE_LEN = 118
+
+function lerp(a: number, b: number, f: number) {
+  const c = Math.min(Math.max(f, 0), 1)
+  return a + (b - a) * c
+}
 
 function toXY(angleDeg: number, r: number) {
   const rad = (angleDeg * Math.PI) / 180
@@ -40,33 +45,37 @@ function randomTarget(width: number): Target {
   return { start: Math.random() * 360, width }
 }
 
+const TICKS = (() => {
+  const arr: { key: number; major: boolean; x1: number; y1: number; x2: number; y2: number }[] = []
+  for (let i = 0; i < 60; i++) {
+    const deg = i * 6
+    const major = i % 5 === 0
+    const [x1, y1] = toXY(deg, major ? TICK_IN_MAJOR : TICK_IN_MINOR)
+    const [x2, y2] = toXY(deg, TICK_OUT)
+    arr.push({ key: i, major, x1, y1, x2, y2 })
+  }
+  return arr
+})()
+
 export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
   const [phase, setPhase] = useState<Phase>('idle')
-  const [round, setRound] = useState(0)
-  const [target, setTarget] = useState<Target>(() => randomTarget(ROUNDS[0].width))
+  const [flash, setFlash] = useState<Flash>(null)
+  const [target, setTarget] = useState<Target>(() => randomTarget(WIDTH_START))
+  const [hits, setHits] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(30)
   const [announce, setAnnounce] = useState('Pick the lock. Click to start.')
 
   const needleRef = useRef<SVGLineElement | null>(null)
   const angleRef = useRef(0)
+  const directionRef = useRef<1 | -1>(1)
+  const startTimeRef = useRef<number | null>(null)
   const rafRef = useRef<number | null>(null)
   const lastTimeRef = useRef<number | null>(null)
   const targetRef = useRef<Target>(target)
-  const phaseRef = useRef<Phase>('idle')
+  const intervalRef = useRef<number | null>(null)
+  const flashTimeoutRef = useRef<number | null>(null)
 
   targetRef.current = target
-  phaseRef.current = phase
-
-  const ticks = useMemo(() => {
-    const arr: { key: number; major: boolean; x1: number; y1: number; x2: number; y2: number }[] = []
-    for (let i = 0; i < 60; i++) {
-      const deg = i * 6
-      const major = i % 5 === 0
-      const [x1, y1] = toXY(deg, major ? TICK_IN_MAJOR : TICK_IN_MINOR)
-      const [x2, y2] = toXY(deg, TICK_OUT)
-      arr.push({ key: i, major, x1, y1, x2, y2 })
-    }
-    return arr
-  }, [])
 
   function stopLoop() {
     if (rafRef.current !== null) {
@@ -76,13 +85,29 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
     lastTimeRef.current = null
   }
 
-  function runLoop(durationMs: number) {
-    const speed = 360 / durationMs // deg per ms
+  function stopTimer() {
+    if (intervalRef.current !== null) {
+      window.clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  function runLoop() {
     const step = (t: number) => {
       if (lastTimeRef.current === null) lastTimeRef.current = t
       const dt = t - lastTimeRef.current
       lastTimeRef.current = t
-      angleRef.current = (angleRef.current + speed * dt) % 360
+
+      const elapsed = t - (startTimeRef.current ?? t)
+      if (elapsed >= GAME_DURATION) {
+        finish()
+        return
+      }
+
+      const f = elapsed / GAME_DURATION
+      const duration = lerp(REV_START, REV_END, f)
+      const speed = 360 / duration // deg per ms
+      angleRef.current = (angleRef.current + directionRef.current * speed * dt + 360) % 360
       if (needleRef.current) {
         needleRef.current.setAttribute('transform', `rotate(${angleRef.current} ${CX} ${CY})`)
       }
@@ -91,71 +116,86 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
     rafRef.current = requestAnimationFrame(step)
   }
 
-  function startRound(index: number) {
-    const cfg = ROUNDS[index]
-    const t = randomTarget(cfg.width)
-    setTarget(t)
-    setRound(index)
-    setPhase('playing')
-    setAnnounce(`Round ${index + 1} of ${ROUNDS.length}. Click when the needle crosses the bright arc.`)
-    angleRef.current = Math.random() * 360
-    stopLoop()
-    runLoop(cfg.duration)
+  function flashNeedle(kind: Flash) {
+    setFlash(kind)
+    if (flashTimeoutRef.current !== null) window.clearTimeout(flashTimeoutRef.current)
+    flashTimeoutRef.current = window.setTimeout(() => setFlash(null), 220)
   }
 
-  function handleClick() {
+  function start() {
+    startTimeRef.current = performance.now()
+    directionRef.current = 1
+    angleRef.current = Math.random() * 360
+    const t = randomTarget(WIDTH_START)
+    setTarget(t)
+    setHits(0)
+    setTimeLeft(30)
+    setPhase('playing')
+    setAnnounce('Click when the needle crosses the bright arc. You have 30 seconds.')
+    stopLoop()
+    runLoop()
+    stopTimer()
+    intervalRef.current = window.setInterval(() => {
+      const elapsed = performance.now() - (startTimeRef.current ?? performance.now())
+      setTimeLeft(Math.max(0, Math.ceil((GAME_DURATION - elapsed) / 1000)))
+    }, 250)
+  }
+
+  function finish(immediate = false) {
+    stopLoop()
+    stopTimer()
+    setPhase('complete')
+    setTimeLeft(0)
+    setAnnounce('Access granted.')
+    window.setTimeout(onUnlocked, immediate ? 0 : 700)
+  }
+
+  function handleDialClick() {
     if (phase === 'idle') {
-      startRound(0)
+      start()
       return
     }
     if (phase !== 'playing') return
 
-    stopLoop()
     const hit = inTarget(angleRef.current, targetRef.current)
-
     if (hit) {
-      setPhase('flash-hit')
-      setAnnounce('Pin set.')
-      window.setTimeout(() => {
-        const next = round + 1
-        if (next >= ROUNDS.length) {
-          setPhase('complete')
-          setAnnounce('Access granted.')
-          window.setTimeout(onUnlocked, 700)
-        } else {
-          startRound(next)
-        }
-      }, 320)
+      directionRef.current = directionRef.current === 1 ? -1 : 1
+      const elapsed = performance.now() - (startTimeRef.current ?? performance.now())
+      const f = elapsed / GAME_DURATION
+      const nextTarget = randomTarget(lerp(WIDTH_START, WIDTH_END, f))
+      setTarget(nextTarget)
+      setHits((h) => h + 1)
+      flashNeedle('hit')
     } else {
-      setPhase('flash-miss')
-      setAnnounce('Missed. Resetting pin.')
-      window.setTimeout(() => {
-        startRound(round)
-      }, 300)
+      flashNeedle('miss')
     }
   }
 
-  useEffect(() => stopLoop, [])
+  function handleSkip() {
+    if (phase === 'complete') return
+    finish(true)
+  }
 
-  const targetPath = describeArc(target.start, target.width, RIM_R)
+  useEffect(() => {
+    return () => {
+      stopLoop()
+      stopTimer()
+      if (flashTimeoutRef.current !== null) window.clearTimeout(flashTimeoutRef.current)
+    }
+  }, [])
+
   const isComplete = phase === 'complete'
+  const targetPath = describeArc(target.start, target.width, RIM_R)
+
   const needleClass =
-    phase === 'flash-hit' || isComplete
+    isComplete || flash === 'hit'
       ? 'lock__needle lock__needle--hit'
-      : phase === 'flash-miss'
+      : flash === 'miss'
         ? 'lock__needle lock__needle--miss'
         : 'lock__needle'
 
   const label =
-    phase === 'idle'
-      ? 'Click to start'
-      : phase === 'flash-hit'
-        ? 'Locked'
-        : phase === 'flash-miss'
-          ? 'Missed — resetting'
-          : phase === 'complete'
-            ? 'Access granted'
-            : 'Click to lock'
+    phase === 'idle' ? 'Click to start' : isComplete ? 'Access granted' : 'Click to lock'
 
   const needleStart = toXY(0, 8)
   const needleEnd = toXY(0, NEEDLE_LEN)
@@ -165,14 +205,14 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
       <button
         type="button"
         className="lock__dial-btn"
-        onClick={handleClick}
+        onClick={handleDialClick}
         disabled={isComplete}
         aria-label={label}
       >
         <svg className="lock__svg" viewBox="0 0 320 320" aria-hidden="true">
           <circle className="lock__rim" cx={CX} cy={CY} r={RIM_R} />
 
-          {ticks.map((tk) => (
+          {TICKS.map((tk) => (
             <line
               key={tk.key}
               className={tk.major ? 'lock__tick lock__tick--major' : 'lock__tick'}
@@ -184,13 +224,7 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
             />
           ))}
 
-          {!isComplete && (
-            <path
-              className="lock__target"
-              d={targetPath}
-              pathLength={100}
-            />
-          )}
+          {!isComplete && <path className="lock__target" d={targetPath} />}
 
           <line
             ref={needleRef}
@@ -221,17 +255,14 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
 
       <p className="lock__label">{label}</p>
 
-      <div className="lock__pips" aria-hidden="true">
-        {ROUNDS.map((_, i) => (
-          <span
-            key={i}
-            className={`lock__pip${i < round || isComplete ? ' lock__pip--filled' : ''}`}
-          />
-        ))}
+      <div className="lock__stats" aria-hidden="true">
+        <span>{phase === 'idle' ? '0:30' : `0:${String(timeLeft).padStart(2, '0')}`}</span>
+        <span className="lock__stats-sep">—</span>
+        <span>{hits} hit{hits === 1 ? '' : 's'}</span>
       </div>
 
       {!isComplete && (
-        <button type="button" className="hero__skip" onClick={onUnlocked}>
+        <button type="button" className="hero__skip" onClick={handleSkip}>
           Skip →
         </button>
       )}

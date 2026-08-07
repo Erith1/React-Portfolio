@@ -62,13 +62,17 @@ const PROJECTS = [
 function App() {
   const [unlocked, setUnlocked] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [pastHero, setPastHero] = useState(false)
 
   const about = useReveal<HTMLElement>()
   const projects = useReveal<HTMLElement>()
   const contact = useReveal<HTMLElement>()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
+    const onScroll = () => {
+      setScrolled(window.scrollY > 8)
+      setPastHero(window.scrollY > window.innerHeight * 0.6)
+    }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -178,6 +182,18 @@ function App() {
           <span>© {new Date().getFullYear()}</span>
         </footer>
       </div>
+
+      <button
+        type="button"
+        className={`to-top${pastHero ? ' to-top--visible' : ''}`}
+        onClick={() => document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' })}
+        aria-label="Back to top"
+        tabIndex={pastHero ? 0 : -1}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M6 15l6-6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
     </>
   )
 }
