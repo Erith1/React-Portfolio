@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState} from 'react'
 import LockGame from './components/LockGame'
 import './App.css'
 
@@ -61,7 +61,20 @@ function App() {
   const [unlocked, setUnlocked] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [pastHero, setPastHero] = useState(false)
-
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [formStatus, setFormStatus] = useState('')
+ const handleFormSubmit = (e: any) => {
+    e.preventDefault(); 
+    
+    setFormStatus('Transmission sent successfully!');
+    setName('');
+    setEmail('');
+    
+    window.setTimeout(() => {
+      setFormStatus('');
+    }, 3000);
+  }
   const about = useReveal<HTMLElement>()
   const projects = useReveal<HTMLElement>()
   const contact = useReveal<HTMLElement>()
@@ -175,13 +188,57 @@ function App() {
         <section id="contact" ref={contact.ref} className={`section${contact.visible ? ' section--visible' : ''}`}>
           <span className="section__eyebrow">TRANSMIT</span>
           <h2 className="section__heading">Contact Me</h2>
+          
           <div className="contact__row">
-            <p className="contact__prompt">
-              Want to know me better? Here's how.
-            </p>
-            <div className="contact__actions">
-              <a className="btn--brass" href="mailto:lorenzo_lubrico@dlsl.edu.ph">lorenzo_lubrico@dlsl.edu.ph</a>
+            {/* Left side: Your existing prompt and email */}
+            <div className="contact__info">
+              <p className="contact__prompt">
+                Want to know me better? Here's how. Leave your info or email me directly.
+              </p>
+              <div className="contact__actions" style={{ marginTop: '20px' }}>
+                <a className="btn--brass" href="mailto:lorenzo_lubrico@dlsl.edu.ph">lorenzo_lubrico@dlsl.edu.ph</a>
+              </div>
             </div>
+
+            {/* Right side: The new form */}
+            <form className="contact__form" onSubmit={handleFormSubmit}>
+              <div className="input-group">
+                <label htmlFor="name" className="input-label">Name*</label>
+                <input 
+                  type="text" 
+                  id="name" 
+                  className="input-field" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  required 
+                  minLength={2} 
+                />
+              </div>
+
+              <div className="input-group">
+                <label htmlFor="email" className="input-label">Gmail / Email*</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  className="input-field" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="johndoe@gmail.com"
+                  required 
+                  /* Optional: If you strictly want ONLY gmail addresses, uncomment the line below */
+                  /* pattern=".+@gmail\.com$" */
+                  /* title="Please provide a valid @gmail.com address" */
+                />
+              </div>
+
+              <button type="submit" className="btn--brass" style={{ marginTop: '8px' }}>
+                Send Details
+              </button>
+              
+              {/* Success Message */}
+              {formStatus && <span className="contact__status">{formStatus}</span>}
+            </form>
           </div>
         </section>
 
