@@ -126,16 +126,19 @@ function App() {
                 mechanics, minus some details and designs.
               </p>
             </div>
-            <div className="about__skills">
-              <span className="about__skills-label">Toolkit</span>
-              <div className="about__chips">
-                {SKILLS.map((skill) => (
-                  <span className="chip" key={skill}>{skill}</span>
-                ))}
-              </div>
+            
+          
+            <div className="about__image-wrapper">
+              <img 
+                src="7f629a6b-f279-4140-a007-8742662bbaef.jpg" 
+                alt="It's me" 
+                className="about__profile-img" 
+              />
             </div>
+
           </div>
         </section>
+             
 
         <section id="projects" ref={projects.ref} className={`section${projects.visible ? ' section--visible' : ''}`}>
           <span className="section__eyebrow">FILES</span>
