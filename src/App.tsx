@@ -102,7 +102,7 @@ function App() {
 
       <div id="top" className="site">
         <section className="hero">
-          <span className="hero__eyebrow">Secure Access</span>
+          <span className="hero__eyebrow">Lock Picking Game</span>
           <LockGame onUnlocked={handleUnlocked} />
           <a className="hero__scroll" href="#about">
             Enter

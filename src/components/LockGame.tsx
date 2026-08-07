@@ -45,6 +45,12 @@ function randomTarget(width: number): Target {
   return { start: Math.random() * 360, width }
 }
 
+type AudioCtxCtor = typeof AudioContext
+
+function getAudioCtor(): AudioCtxCtor | undefined {
+  return (window.AudioContext || (window as unknown as { webkitAudioContext?: AudioCtxCtor }).webkitAudioContext)
+}
+
 const TICKS = (() => {
   const arr: { key: number; major: boolean; x1: number; y1: number; x2: number; y2: number }[] = []
   for (let i = 0; i < 60; i++) {
@@ -64,6 +70,7 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
   const [hits, setHits] = useState(0)
   const [timeLeft, setTimeLeft] = useState(30)
   const [announce, setAnnounce] = useState('Pick the lock. Click to start.')
+  const [replayReady, setReplayReady] = useState(false)
 
   const needleRef = useRef<SVGLineElement | null>(null)
   const angleRef = useRef(0)
@@ -74,8 +81,42 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
   const targetRef = useRef<Target>(target)
   const intervalRef = useRef<number | null>(null)
   const flashTimeoutRef = useRef<number | null>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
 
   targetRef.current = target
+
+  function getAudioContext(): AudioContext | null {
+    const Ctor = getAudioCtor()
+    if (!Ctor) return null
+    if (!audioCtxRef.current) audioCtxRef.current = new Ctor()
+    if (audioCtxRef.current.state === 'suspended') void audioCtxRef.current.resume()
+    return audioCtxRef.current
+  }
+
+  function playTone(freq: number, duration: number, type: OscillatorType, peak: number) {
+    const ctx = getAudioContext()
+    if (!ctx) return
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = type
+    osc.frequency.value = freq
+    const now = ctx.currentTime
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(peak, now + 0.008)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration)
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start(now)
+    osc.stop(now + duration + 0.02)
+  }
+
+  function playHitSound() {
+    playTone(880, 0.13, 'sine', 0.07)
+  }
+
+  function playMissSound() {
+    playTone(160, 0.16, 'triangle', 0.06)
+  }
 
   function stopLoop() {
     if (rafRef.current !== null) {
@@ -131,6 +172,7 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
     setHits(0)
     setTimeLeft(30)
     setPhase('playing')
+    setReplayReady(false)
     setAnnounce('Click when the needle crosses the bright arc. You have 30 seconds.')
     stopLoop()
     runLoop()
@@ -148,10 +190,11 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
     setTimeLeft(0)
     setAnnounce('Access granted.')
     window.setTimeout(onUnlocked, immediate ? 0 : 700)
+    window.setTimeout(() => setReplayReady(true), immediate ? 0 : 900)
   }
 
   function handleDialClick() {
-    if (phase === 'idle') {
+    if (phase === 'idle' || phase === 'complete') {
       start()
       return
     }
@@ -166,8 +209,10 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
       setTarget(nextTarget)
       setHits((h) => h + 1)
       flashNeedle('hit')
+      playHitSound()
     } else {
       flashNeedle('miss')
+      playMissSound()
     }
   }
 
@@ -181,6 +226,7 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
       stopLoop()
       stopTimer()
       if (flashTimeoutRef.current !== null) window.clearTimeout(flashTimeoutRef.current)
+      if (audioCtxRef.current) void audioCtxRef.current.close()
     }
   }, [])
 
@@ -195,7 +241,13 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
         : 'lock__needle'
 
   const label =
-    phase === 'idle' ? 'Click to start' : isComplete ? 'Access granted' : 'Click to lock'
+    phase === 'idle'
+      ? 'Click to start'
+      : isComplete
+        ? replayReady
+          ? 'Click to play again'
+          : 'Access granted'
+        : 'Click to lock'
 
   const needleStart = toXY(0, 8)
   const needleEnd = toXY(0, NEEDLE_LEN)
@@ -206,7 +258,6 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
         type="button"
         className="lock__dial-btn"
         onClick={handleDialClick}
-        disabled={isComplete}
         aria-label={label}
       >
         <svg className="lock__svg" viewBox="0 0 320 320" aria-hidden="true">
