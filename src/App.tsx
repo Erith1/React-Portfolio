@@ -25,15 +25,7 @@ function useReveal<T extends HTMLElement>() {
   return { ref, visible }
 }
 
-const SKILLS = [
-  'React',
-  'TypeScript',
-  'Node.js',
-  'Design Systems',
-  'REST / GraphQL',
-  'CI/CD',
-  'Accessibility',
-]
+
 
 const PROJECTS = [
   {
