@@ -383,12 +383,10 @@
   text-decoration: none;
   color: var(--text);
   transition: background 0.25s ease;
+cursor: default; 
 }
 
-.project-card:hover,
-.project-card:focus-visible {
-  background: var(--panel);
-}
+
 
 .project-card__index {
   font-family: var(--mono);
@@ -555,6 +553,13 @@
   height: 16px;
 }
 
+.project-card__img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px; /* Optional, matches a modern aesthetic */
+  margin-bottom: 12px; /* Adds space between the image and the description */
+  display: block;
+}
 /* ---------- responsive ---------- */
 
 @media (max-width: 860px) {

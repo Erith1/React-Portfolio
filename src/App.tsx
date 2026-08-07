@@ -38,22 +38,28 @@ const SKILLS = [
 const PROJECTS = [
   {
     index: 'PRJ—01',
-    title: 'Realtime Dashboard',
-    desc: 'A live operations dashboard streaming metrics over websockets, built for fast triage under load.',
-    tags: ['react', 'websockets', 'd3'],
-    href: '#',
+    title: 'Final COPROG Project',
+    // Add your image paths here:
+    imgSrc: 'finalscoprog.png', 
+    imgAlt: 'A preview of the Realtime Dashboard project',
+    // The description will now sit below the image:
+    desc: 'One of the hardest projects I have done during my 1st year college.',
   },
   {
     index: 'PRJ—02',
-    title: 'Design System Kit',
-    desc: 'A component library and token pipeline shared across four product teams, from Figma to production.',
+    title: 'OOPROG Abstraction',
+    imgSrc: 'Abstraction.png',
+    imgAlt: 'Design System Kit UI components',
+    desc: 'We had to implement abstraction to hide hte internal details of how the code works and show only the resulting parts.',
     tags: ['typescript', 'storybook', 'tokens'],
     href: '#',
   },
   {
     index: 'PRJ—03',
-    title: 'Access Gateway',
-    desc: 'An internal auth gateway handling session issuance and rate limiting for a growing set of services.',
+    title: 'OOPROG Inheritance',
+    imgSrc: 'Inheritance.png',
+    imgAlt: 'Access Gateway network diagram',
+    desc: 'We had to optimize our code by using functions and using said same functions on multiple parts of our code to avoid reiteration.',
     tags: ['node', 'redis', 'security'],
     href: '#',
   },
@@ -145,14 +151,29 @@ function App() {
           <h2 className="section__heading">Projects</h2>
           <div className="projects__grid">
             {PROJECTS.map((p) => (
-              <a className="project-card" href={p.href} key={p.index}>
+              <a 
+                className="project-card" 
+                href={p.href} 
+                key={p.index}
+                onClick={(e) => {
+                  if (p.href === '#') e.preventDefault();
+                }}
+              >
                 <span className="project-card__index">{p.index}</span>
                 <h3 className="project-card__title">{p.title}</h3>
-                <p className="project-card__desc">{p.desc}</p>
+                
+            
+                <div className="project-card__media">
+                  <img 
+                    src={p.imgSrc} 
+                    alt={p.imgAlt} 
+                    className="project-card__img" 
+                  />
+                  <p className="project-card__desc">{p.desc}</p>
+                </div>
+                
                 <div className="project-card__tags">
-                  {p.tags.map((t) => (
-                    <span className="tag" key={t}>{t}</span>
-                  ))}
+
                 </div>
               </a>
             ))}
