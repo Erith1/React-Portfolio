@@ -113,19 +113,17 @@ function App() {
         </section>
 
         <section id="about" ref={about.ref} className={`section${about.visible ? ' section--visible' : ''}`}>
-          <span className="section__eyebrow">// 01 — Profile</span>
+          <span className="section__eyebrow">PROFILE</span>
           <h2 className="section__heading">About Me</h2>
           <div className="about__grid">
             <div className="about__bio">
               <p>
-                I'm a software engineer who likes building small, well-made things for the
-                web — the kind of interfaces that feel obvious in hindsight. I care about the
-                gap between a working feature and a considered one.
+                I'm a third year CS student, I like to play video games, guitar, and hangout with my friends. I made this project 
+                because it was my assighnment. I hope you enjoy the minigame that I made. 
               </p>
               <p>
-                Most days I'm somewhere between product code and the tools that make it easier
-                to write: component libraries, design tokens, and the odd unnecessary side
-                project, like the lock you just picked.
+                This game was heavily inspired by the Dota 2 minigame event called 'Pick the Lock', it essentialy follows the same 
+                mechanics, minus some details and designs.
               </p>
             </div>
             <div className="about__skills">
@@ -140,7 +138,7 @@ function App() {
         </section>
 
         <section id="projects" ref={projects.ref} className={`section${projects.visible ? ' section--visible' : ''}`}>
-          <span className="section__eyebrow">// 02 — Case Files</span>
+          <span className="section__eyebrow">FILES</span>
           <h2 className="section__heading">Projects</h2>
           <div className="projects__grid">
             {PROJECTS.map((p) => (
@@ -159,12 +157,11 @@ function App() {
         </section>
 
         <section id="contact" ref={contact.ref} className={`section${contact.visible ? ' section--visible' : ''}`}>
-          <span className="section__eyebrow">// 03 — Transmit</span>
+          <span className="section__eyebrow">TRANSMIT</span>
           <h2 className="section__heading">Contact Me</h2>
           <div className="contact__row">
             <p className="contact__prompt">
-              Have a project, a role, or just a good problem to talk through?
-              I read everything that comes in.
+              Want to know me better? Here's how.
             </p>
             <div className="contact__actions">
               <a className="btn--brass" href="mailto:hello@example.com">Send a message</a>
