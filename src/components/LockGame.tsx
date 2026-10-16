@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import './LockGame.css'
 
 type Phase = 'idle' | 'playing' | 'complete'
 type Flash = 'hit' | 'miss' | null
@@ -63,7 +64,7 @@ const TICKS = (() => {
   return arr
 })()
 
-export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
+export default function LockGame({ onUnlocked }: { onUnlocked?: () => void }) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [flash, setFlash] = useState<Flash>(null)
   const [target, setTarget] = useState<Target>(() => randomTarget(WIDTH_START))
@@ -82,6 +83,7 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
   const intervalRef = useRef<number | null>(null)
   const flashTimeoutRef = useRef<number | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
+  const finishTimeoutsRef = useRef<number[]>([])
 
   targetRef.current = target
 
@@ -164,6 +166,8 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
   }
 
   function start() {
+    finishTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    finishTimeoutsRef.current = []
     startTimeRef.current = performance.now()
     directionRef.current = 1
     angleRef.current = Math.random() * 360
@@ -183,14 +187,17 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
     }, 250)
   }
 
-  function finish(immediate = false) {
+  function finish() {
     stopLoop()
     stopTimer()
     setPhase('complete')
     setTimeLeft(0)
     setAnnounce('Access granted.')
-    window.setTimeout(onUnlocked, immediate ? 0 : 700)
-    window.setTimeout(() => setReplayReady(true), immediate ? 0 : 900)
+    finishTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    finishTimeoutsRef.current = [
+      window.setTimeout(() => onUnlocked?.(), 700),
+      window.setTimeout(() => setReplayReady(true), 900),
+    ]
   }
 
   function handleDialClick() {
@@ -216,16 +223,12 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
     }
   }
 
-  function handleSkip() {
-    if (phase === 'complete') return
-    finish(true)
-  }
-
   useEffect(() => {
     return () => {
       stopLoop()
       stopTimer()
       if (flashTimeoutRef.current !== null) window.clearTimeout(flashTimeoutRef.current)
+      finishTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
       if (audioCtxRef.current) void audioCtxRef.current.close()
     }
   }, [])
@@ -311,12 +314,6 @@ export default function LockGame({ onUnlocked }: { onUnlocked: () => void }) {
         <span className="lock__stats-sep">—</span>
         <span>{hits} hit{hits === 1 ? '' : 's'}</span>
       </div>
-
-      {!isComplete && (
-        <button type="button" className="hero__skip" onClick={handleSkip}>
-          Skip →
-        </button>
-      )}
 
       <span className="visually-hidden" role="status" aria-live="polite">
         {announce}

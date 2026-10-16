@@ -1,0 +1,122 @@
+.lock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.lock__dial-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 50%;
+}
+
+.lock__dial-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 6px;
+}
+
+.lock__dial-btn:disabled {
+  cursor: default;
+}
+
+.lock__svg {
+  width: min(58vw, 300px);
+  height: min(58vw, 300px);
+  display: block;
+}
+
+.lock__rim {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.lock__tick {
+  stroke: var(--text-faint);
+}
+
+.lock__tick--major {
+  stroke: var(--text-dim);
+}
+
+.lock__target {
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 6px var(--brass-glow));
+}
+
+.lock__target--solved {
+  stroke: var(--brass);
+  opacity: 1;
+}
+
+.lock__needle {
+  stroke: var(--text);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke 0.15s ease;
+}
+
+.lock__needle--hit {
+  stroke: var(--brass);
+}
+
+.lock__needle--miss {
+  stroke: var(--danger);
+}
+
+.lock__hub {
+  fill: var(--panel);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.lock__hub-icon {
+  stroke: var(--text-dim);
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.4s ease, transform 0.5s ease;
+  transform-origin: 160px 168px;
+}
+
+.lock--complete .lock__hub-icon {
+  stroke: var(--brass);
+}
+
+.lock__label {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  min-height: 20px;
+}
+
+.lock--complete .lock__label {
+  color: var(--brass);
+}
+
+.lock__stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.lock__stats-sep {
+  opacity: 0.5;
+}
+
