@@ -1,15 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
-import LockGame from './components/LockGame'
 import './App.css'
-
-const EMAIL = 'lorenzo_lubrico@dlsl.edu.ph'
 
 const NAV = [
   { id: 'about', label: 'About' },
   { id: 'projects', label: 'Projects' },
-  { id: 'game', label: 'Game' },
-  { id: 'contact', label: 'Contact' },
 ]
 
 const PROJECTS = [
@@ -86,8 +80,6 @@ function Section({
 
 function App() {
   const [scrolled, setScrolled] = useState(false)
-  const [name, setName] = useState('')
-  const [message, setMessage] = useState('')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -95,12 +87,6 @@ function App() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const subject = `Portfolio message from ${name.trim()}`
-    window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message.trim())}`
-  }
 
   return (
     <>
@@ -132,9 +118,6 @@ function App() {
             <a className="btn btn--brass" href="#projects">
               View projects
             </a>
-            <a className="btn btn--ghost" href="#contact">
-              Get in touch
-            </a>
           </div>
         </header>
 
@@ -145,11 +128,7 @@ function App() {
                 I'm a third-year Computer Science student. Outside of class I like playing video games, playing
                 guitar, and hanging out with friends.
               </p>
-              <p>
-                This portfolio started as a school assignment. The lock-picking minigame further down is inspired by
-                the Dota 2 event mini-game "Pick the Lock" and follows the same core mechanic, minus some details and
-                designs. I hope you enjoy it.
-              </p>
+              <p>This portfolio started as a school assignment. I hope you enjoy it.</p>
             </div>
             <div className="about__frame">
               <img className="about__img" src="/7f629a6b-f279-4140-a007-8742662bbaef.jpg" alt="Portrait of Lorenzo" />
@@ -167,55 +146,6 @@ function App() {
                 <p className="card__desc">{p.desc}</p>
               </article>
             ))}
-          </div>
-        </Section>
-
-        <Section id="game" eyebrow="PLAYGROUND" title="Pick the Lock">
-          <p className="game__intro">
-            Click the dial when the needle crosses the bright arc. Every hit reverses the needle, and the arc shrinks
-            as time runs out. Survive 30 seconds.
-          </p>
-          <LockGame />
-        </Section>
-
-        <Section id="contact" eyebrow="TRANSMIT" title="Contact Me">
-          <div className="contact">
-            <div className="contact__info">
-              <p>Want to know me better? Email me directly or write a message here and it will open in your mail app.</p>
-              <a className="btn btn--brass" href={`mailto:${EMAIL}`}>
-                {EMAIL}
-              </a>
-            </div>
-            <form className="form" onSubmit={handleSubmit}>
-              <label className="form__label" htmlFor="name">
-                Name
-              </label>
-              <input
-                id="name"
-                className="form__field"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                required
-                minLength={2}
-                autoComplete="name"
-              />
-              <label className="form__label" htmlFor="message">
-                Message
-              </label>
-              <textarea
-                id="message"
-                className="form__field form__field--area"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Say hello…"
-                rows={5}
-                required
-              />
-              <button type="submit" className="btn btn--brass">
-                Open in mail app
-              </button>
-            </form>
           </div>
         </Section>
       </main>
